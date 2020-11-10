@@ -43,6 +43,7 @@ const App = () => {
   // const [userToken, setUserToken] = React.useState(null);
 
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
+  const [header, setHeader] = React.useState({});
 
   const initialLoginState = {
     isLoading: true,
@@ -117,13 +118,10 @@ const App = () => {
   );
 
   const authContext = {
-    signIn: async data => {
-      const head = {
-        headers: {'Content-Type': 'application/json'},
-      };
+    signIn: data => {
       dispatch({type: 'SET_LOADING'});
-      await axios
-        .post('http://10.0.2.2:8180/api/authenticate.do', {...data}, head)
+       axios
+        .post('http://10.0.2.2:8180/api/authenticate.do', {...data}, {header})
         .then(res => {
           console.log(res.data);
           if (res.data) {
@@ -131,8 +129,14 @@ const App = () => {
             // setIsLoading(false);
             const userToken = String(res.data.userToken);
             const userName = res.data.username;
+
             try {
               AsyncStorage.setItem('userToken', userToken);
+              setHeader({
+                headers: {
+                  Authorization: 'Bearer ' + userToken
+                }
+              });  
               dispatch({type: 'LOGIN', id: userName, token: userToken});
             } catch (e) {
               console.log(e);
@@ -165,15 +169,31 @@ const App = () => {
     toggleTheme: () => {
       setIsDarkTheme(isDarkTheme => !isDarkTheme);
     },
+    getHeader: () => {
+      return header;
+    },
+    addGroupCode: (atrb) => {
+      const param = {groupCodes: []};
+      param.groupCodes.push(atrb);
+      return param;
+    }
   };
 
   useEffect(() => {
     setTimeout(async () => {
-      // setIsLoading(false);
       let userToken;
       userToken = null;
       try {
         userToken = await AsyncStorage.getItem('userToken');
+        console.log(userToken)
+
+        if(userToken != null) {
+          setHeader({
+            headers: {
+              Authorization: 'Bearer ' + userToken
+            }
+          });  
+        }
       } catch (e) {
         console.log(e);
       }
